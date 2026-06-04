@@ -1,0 +1,76 @@
+// REFERENCE ONLY — not compiled, not used at runtime.
+// Transport is HTTP/JSON. This file documents the intended RPC contract.
+syntax = "proto3";
+package deviate;
+
+service Deviate {
+  rpc GetGTOStrategy(GTORequest) returns (GTOResponse);
+  rpc UpdateRange(RangeUpdateRequest) returns (RangeUpdateResponse);
+  rpc GetBestResponse(BRRequest) returns (BRResponse);
+  rpc GetProgress(ProgressRequest) returns (ProgressResponse);
+}
+
+message GTORequest {
+  repeated string hole_cards = 1;
+  repeated string board_cards = 2;
+  int32 position = 3;
+  double pot_size = 4;
+  double stack_size = 5;
+  int32 street = 6;
+}
+
+message ActionStrategy {
+  string action = 1;
+  double frequency = 2;
+  double ev = 3;
+}
+
+message GTOResponse {
+  repeated ActionStrategy strategy = 1;
+  int32 bucket = 2;
+}
+
+message RangeUpdateRequest {
+  repeated string board_cards = 1;
+  string action_type = 2;
+  repeated double weights = 3;
+  double pot_size = 4;
+  double stack_size = 5;
+  int32 street = 6;
+}
+
+message DeviationInfo {
+  bool detected = 1;
+  string severity = 2;
+  double gto_frequency = 3;
+  double exploit_ev = 4;
+}
+
+message RangeUpdateResponse {
+  repeated double weights = 1;
+  DeviationInfo deviation = 2;
+}
+
+message BRRequest {
+  repeated string hole_cards = 1;
+  repeated string board_cards = 2;
+  int32 position = 3;
+  double pot_size = 4;
+  double stack_size = 5;
+  int32 street = 6;
+  repeated double range_weights = 7;
+}
+
+message BRResponse {
+  repeated ActionStrategy actions = 1;
+  string best_action = 2;
+  double ev_gain = 3;
+}
+
+message ProgressRequest {}
+
+message ProgressResponse {
+  int32 solved = 1;
+  int32 total = 2;
+  double pct = 3;
+}

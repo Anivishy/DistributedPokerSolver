@@ -1,0 +1,126 @@
+services:
+  kafka:
+    image: apache/kafka:3.7.0
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://kafka:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  worker1:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      WORKER_ID: "1"
+      PORT: "9001"
+      KAFKA_ADDR: "kafka:9092"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  worker2:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      WORKER_ID: "2"
+      PORT: "9001"
+      KAFKA_ADDR: "kafka:9092"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  worker3:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      WORKER_ID: "3"
+      PORT: "9001"
+      KAFKA_ADDR: "kafka:9092"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  worker4:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      WORKER_ID: "4"
+      PORT: "9001"
+      KAFKA_ADDR: "kafka:9092"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.coordinator
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      WORKER_ADDRS: "worker1:9001,worker2:9001,worker3:9001,worker4:9001"
+      NUM_ITERATIONS: "10000"
+      KAFKA_ADDR: "kafka:9092"
+    volumes:
+      - solver_data:/data
+    depends_on:
+      worker1:
+        condition: service_healthy
+      worker2:
+        condition: service_healthy
+      worker3:
+        condition: service_healthy
+      worker4:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      coordinator:
+        condition: service_healthy
+
+volumes:
+  solver_data:

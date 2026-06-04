@@ -1,0 +1,13 @@
+FROM golang:1.23-alpine AS build
+WORKDIR /app
+COPY go.mod ./
+RUN go mod download
+COPY . .
+RUN go build -o coordinator ./cmd/coordinator
+
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY --from=build /app/coordinator .
+EXPOSE 8080
+CMD ["./coordinator"]
